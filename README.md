@@ -1,2 +1,147 @@
-# PipelineGenerator
+# pipeline-gen
 
+**Analyze your repo. Generate your pipeline. Ship with confidence.**
+
+pipeline-gen is a CLI tool that walks a repository, detects the language/framework/toolchain, and produces a best-practice CI/CD configuration — with security defaults baked in from the start.
+
+---
+
+## Why this exists
+
+CI/CD configs are copy-pasted far more than they're written from scratch. The result is:
+
+- **Drift** — the pipeline for `service-b` still uses the same Node 16 matrix that `service-a` had in 2022.
+- **Insecurity** — action versions pinned by mutable tag, no secret scanning, `permissions: write-all` because it was easier at 2am.
+- **Inconsistency** — four microservices, four different caching strategies, none of them optimal.
+
+pipeline-gen replaces "find a working config and edit it" with "run one command and get something correct."
+
+---
+
+## Quick start
+
+```bash
+# Install (once published)
+npm install -g pipeline-gen
+
+# Analyze what pipeline-gen can detect about your repo
+pipeline-gen analyze ./my-repo
+
+# Generate a GitHub Actions workflow
+pipeline-gen generate --target github-actions ./my-repo
+
+# Preview without writing any files
+pipeline-gen generate --target github-actions --dry-run ./my-repo
+
+# Walk through choices interactively
+pipeline-gen generate --target github-actions --interactive ./my-repo
+```
+
+---
+
+## What it detects
+
+| Language / Runtime | Frameworks | Package Managers | Test Runners |
+|--------------------|------------|------------------|--------------|
+| TypeScript / JavaScript | Next.js, Express, Fastify, React | npm, yarn, pnpm | Jest, Vitest |
+| Python | FastAPI, Django, Flask | pip, poetry | pytest |
+| Go | gin, chi, standard library | Go modules | go test |
+
+**Deployment targets:** Kubernetes (Helm), serverless (serverless.yml), static sites (Vercel, Netlify), Docker
+
+**Monorepo support:** Detects workspaces and generates path-filtered triggers per sub-project.
+
+---
+
+## CLI reference
+
+```
+pipeline-gen analyze [path]
+  Analyze the repo at [path] and print the detected project manifest.
+
+pipeline-gen generate [path]
+  --target <platform>          github-actions | gitlab-ci  (required)
+  --output <path>              Override the output file path
+  --dry-run                    Print what would be written without writing it
+  --interactive                Walk through generation choices interactively
+  --monorepo-strategy <s>      single | per-project | fan-out  (default: auto)
+
+pipeline-gen diff [path]
+  Show what would change if you regenerated the pipeline config.
+
+Global flags:
+  --verbose                    Enable debug output
+  --version                    Show version
+  --help                       Show help
+```
+
+---
+
+## Security defaults
+
+Every generated pipeline includes these without opt-in:
+
+- **SHA-pinned actions** — not tags. Tags are mutable; SHAs are not. See [ADR 003](docs/adr/003-sha-pinning.md).
+- **`permissions: read-all`** — jobs request only the permissions they need.
+- **Frozen lockfile installs** — `npm ci`, `pip install --require-hashes`, `go mod download -x`.
+- **Secret scanning** — a gitleaks step runs before any other work.
+- **No secret echoing** — generated steps never log `${{ secrets.* }}` values.
+
+---
+
+## Architecture
+
+See [docs/DESIGN.md](docs/DESIGN.md) for the full architecture and data flow.
+
+The four layers are:
+
+```
+Repo → Analyzers → ProjectManifest → Generators → Pipeline (DSL) → Renderers → YAML
+```
+
+ADRs explain the key decisions:
+
+- [ADR 001](docs/adr/001-internal-dsl.md) — Internal DSL vs. YAML templating
+- [ADR 002](docs/adr/002-plugin-hooks.md) — Plugin hooks vs. middleware
+- [ADR 003](docs/adr/003-sha-pinning.md) — SHA pinning rationale
+
+---
+
+## Extending with plugins
+
+Register plugins in `.pipelinegenrc.json` (or the `"pipeline-gen"` key in `package.json`):
+
+```json
+{
+  "target": "github-actions",
+  "plugins": ["sonarqube", "slack-notify"],
+  "config": {
+    "sonarqube": { "projectKey": "my-project" },
+    "slack-notify": { "channel": "#deploys" }
+  }
+}
+```
+
+To write your own plugin, implement the `Plugin` interface from `src/plugins/base.ts` and hook into `afterAnalyze`, `beforeGenerate`, or `afterGenerate`.
+
+---
+
+## Development
+
+```bash
+npm install
+npm run build       # compile TypeScript
+npm test            # run Vitest
+npm run lint        # ESLint
+npm run format      # Prettier
+npm run dev -- analyze ./tests/fixtures/node-basic   # run without building
+```
+
+---
+
+## Philosophy
+
+- **Opinionated defaults, transparent decisions.** The dry-run output tells you exactly what was detected and why.
+- **Security-first.** Security steps are not optional add-ons; they're in every generated pipeline.
+- **Open for extension, closed for modification.** The plugin system lets you add without touching core logic.
+- **Dogfooding.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in this repo is generated by pipeline-gen itself.

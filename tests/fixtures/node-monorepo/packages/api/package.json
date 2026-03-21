@@ -1,0 +1,11 @@
+{
+  "name": "@monorepo/api",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fastify": "^4.0.0"
+  }
+}
