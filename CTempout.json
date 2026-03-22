@@ -1,0 +1,201 @@
+ℹ Analyzing repository at: ./tests/fixtures/node-basic
+ℹ Generating pipeline (target: github-actions)
+{
+  "name": "node-basic CI",
+  "triggers": [
+    {
+      "type": "push",
+      "branches": [
+        "main"
+      ]
+    },
+    {
+      "type": "pull_request"
+    }
+  ],
+  "env": {},
+  "stages": [
+    {
+      "name": "test",
+      "jobs": [
+        {
+          "name": "unit-tests",
+          "runsOn": "ubuntu-latest",
+          "steps": [
+            {
+              "name": "Checkout",
+              "type": "action",
+              "action": "actions/checkout",
+              "actionVersion": "11bd71901bbe5b1630ceea73d27597364c9af683"
+            },
+            {
+              "name": "Scan for secrets",
+              "type": "action",
+              "action": "gitleaks/gitleaks-action",
+              "actionVersion": "cb7149a9b57195b609c63e8518d2c6ef8e5b7726",
+              "env": {
+                "GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}"
+              }
+            },
+            {
+              "name": "Set up Node.js ${{ matrix.node-version }}",
+              "type": "action",
+              "action": "actions/setup-node",
+              "actionVersion": "39370e3970a6d050c480ffad4ff0ed4d3fdee5af",
+              "with": {
+                "node-version": "${{ matrix.node-version }}",
+                "cache": "npm"
+              }
+            },
+            {
+              "name": "Install dependencies",
+              "type": "run",
+              "run": "npm ci"
+            },
+            {
+              "name": "Lint",
+              "type": "run",
+              "run": "npm run lint"
+            },
+            {
+              "name": "Security audit",
+              "type": "run",
+              "run": "npm audit --audit-level=moderate"
+            },
+            {
+              "name": "Run tests",
+              "type": "run",
+              "run": "npx jest --coverage --ci --forceExit"
+            }
+          ],
+          "timeoutMinutes": 20,
+          "matrix": {
+            "dimensions": {
+              "node-version": [
+                "20",
+                "22"
+              ]
+            }
+          },
+          "cache": {
+            "key": "npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}",
+            "paths": [
+              "~/.npm"
+            ],
+            "restoreKeys": [
+              "npm-${{ runner.os }}-"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "jobs": [
+        {
+          "name": "build",
+          "runsOn": "ubuntu-latest",
+          "steps": [
+            {
+              "name": "Checkout",
+              "type": "action",
+              "action": "actions/checkout",
+              "actionVersion": "11bd71901bbe5b1630ceea73d27597364c9af683"
+            },
+            {
+              "name": "Set up Node.js",
+              "type": "action",
+              "action": "actions/setup-node",
+              "actionVersion": "39370e3970a6d050c480ffad4ff0ed4d3fdee5af",
+              "with": {
+                "node-version": "20",
+                "cache": "npm"
+              }
+            },
+            {
+              "name": "Install dependencies",
+              "type": "run",
+              "run": "npm ci"
+            },
+            {
+              "name": "Build",
+              "type": "run",
+              "run": "npm run build"
+            }
+          ],
+          "timeoutMinutes": 15,
+          "cache": {
+            "key": "npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}",
+            "paths": [
+              "~/.npm"
+            ],
+            "restoreKeys": [
+              "npm-${{ runner.os }}-"
+            ]
+          }
+        }
+      ],
+      "dependsOn": [
+        "test"
+      ]
+    },
+    {
+      "name": "publish",
+      "jobs": [
+        {
+          "name": "publish-npm",
+          "runsOn": "ubuntu-latest",
+          "steps": [
+            {
+              "name": "Checkout",
+              "type": "action",
+              "action": "actions/checkout",
+              "actionVersion": "11bd71901bbe5b1630ceea73d27597364c9af683"
+            },
+            {
+              "name": "Set up Node.js",
+              "type": "action",
+              "action": "actions/setup-node",
+              "actionVersion": "39370e3970a6d050c480ffad4ff0ed4d3fdee5af",
+              "with": {
+                "node-version": "20",
+                "cache": "npm",
+                "registry-url": "https://registry.npmjs.org"
+              }
+            },
+            {
+              "name": "Install dependencies",
+              "type": "run",
+              "run": "npm ci"
+            },
+            {
+              "name": "Publish to npm",
+              "type": "run",
+              "run": "npm publish",
+              "env": {
+                "NODE_AUTH_TOKEN": "${{ secrets.NPM_TOKEN }}"
+              }
+            }
+          ],
+          "timeoutMinutes": 10,
+          "condition": "github.ref_type == 'tag'",
+          "cache": {
+            "key": "npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}",
+            "paths": [
+              "~/.npm"
+            ],
+            "restoreKeys": [
+              "npm-${{ runner.os }}-"
+            ]
+          }
+        }
+      ],
+      "dependsOn": [
+        "build"
+      ]
+    }
+  ],
+  "permissions": {
+    "default": "read-all"
+  }
+}

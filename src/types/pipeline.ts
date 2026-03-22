@@ -60,10 +60,27 @@ export interface Notification {
   target: string; // channel, address, or URL
 }
 
+export type PermissionLevel = 'read' | 'write' | 'none';
+
+/**
+ * Maps to GitHub Actions `permissions:` / GitLab CI token permissions.
+ * Default is read-all (least privilege). Jobs opt in to write access.
+ */
+export interface Permissions {
+  default?: 'read-all' | 'write-all';
+  contents?: PermissionLevel;
+  packages?: PermissionLevel;
+  idToken?: PermissionLevel;
+  pullRequests?: PermissionLevel;
+  securityEvents?: PermissionLevel;
+}
+
 export interface Pipeline {
   name: string;
   triggers: Trigger[];
   env: Record<string, string>;
+  /** Workflow-level permissions. Defaults to read-all (least privilege). */
+  permissions?: Permissions;
   stages: Stage[];
   notifications?: Notification[];
 }

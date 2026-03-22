@@ -80,6 +80,7 @@ export class NodeAnalyzer implements Analyzer {
       hasDockerfile: false, // enriched by DockerAnalyzer
       deploymentTargets: [], // enriched by DeploymentAnalyzer
       artifacts,
+      raw: { scripts: pkg?.scripts ?? {} },
     };
   }
 

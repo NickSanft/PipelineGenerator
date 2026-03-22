@@ -1,4 +1,4 @@
-import type { Pipeline, Stage, Job, Step, Trigger, CacheConfig, MatrixConfig } from '../types/pipeline.js';
+import type { Pipeline, Stage, Job, Step, Trigger, CacheConfig, MatrixConfig, Permissions } from '../types/pipeline.js';
 
 // ── Job Builder ───────────────────────────────────────────────────────────────
 
@@ -86,6 +86,11 @@ export class PipelineBuilder {
 
   trigger(config: Trigger): this {
     this.pipeline.triggers.push(config);
+    return this;
+  }
+
+  permissions(config: Permissions): this {
+    this.pipeline.permissions = config;
     return this;
   }
 

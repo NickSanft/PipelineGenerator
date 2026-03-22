@@ -25,6 +25,8 @@ export interface ProjectDescriptor {
   hasDockerfile: boolean;
   deploymentTargets: DeployTarget[];
   artifacts: ArtifactType[];
+  /** Escape hatch for analyzer-specific data (e.g. npm scripts, go module name) */
+  raw?: Record<string, unknown>;
 }
 
 export type ArtifactType = 'docker-image' | 'npm-package' | 'binary' | 'wheel' | 'unknown';
