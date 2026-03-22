@@ -43,7 +43,6 @@ export class GoGenerator implements PipelineGenerator {
           .step('Set up Go',
             actionStep('Set up Go', 'setupGo', {
               'go-version-file': 'go.mod',
-              cache: 'true',
             }),
           )
           .step('Download modules', runStep('Download modules', 'go mod download'))
@@ -69,8 +68,7 @@ export class GoGenerator implements PipelineGenerator {
             .step('Set up Go',
               actionStep('Set up Go', 'setupGo', {
                 'go-version-file': 'go.mod',
-                cache: 'true',
-              }),
+                }),
             )
             .step('Download modules', runStep('Download modules', 'go mod download'))
             .step('Run tests',
@@ -96,8 +94,7 @@ export class GoGenerator implements PipelineGenerator {
               .step('Set up Go',
                 actionStep('Set up Go', 'setupGo', {
                   'go-version-file': 'go.mod',
-                  cache: 'true',
-                }),
+                    }),
               )
               .step('Build', runStep('Build', 'go build -v -ldflags="-s -w" ./...'))
               .step('Security scan', runStep('Security scan',

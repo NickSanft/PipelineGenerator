@@ -94,7 +94,6 @@ export class NodeGenerator implements PipelineGenerator {
           .step('Set up Node.js ${{ matrix.node-version }}',
             actionStep('Set up Node.js ${{ matrix.node-version }}', 'setupNode', {
               'node-version': '${{ matrix.node-version }}',
-              cache: pm ?? 'npm',
             }),
           )
           .step('Install dependencies', runStep('Install dependencies', installCommand(pm)));
@@ -133,7 +132,6 @@ export class NodeGenerator implements PipelineGenerator {
               .step('Set up Node.js',
                 actionStep('Set up Node.js', 'setupNode', {
                   'node-version': '20',
-                  cache: pm ?? 'npm',
                 }),
               )
               .step('Install dependencies', runStep('Install dependencies', installCommand(pm)))
