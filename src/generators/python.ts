@@ -1,6 +1,7 @@
 import type { PipelineGenerator } from './base.js';
 import type { ProjectManifest } from '../types/manifest.js';
 import type { CacheConfig, Pipeline } from '../types/pipeline.js';
+import type { GeneratorOptions } from './options.js';
 import { PipelineBuilder } from '../builder/pipeline-builder.js';
 import { actionStep, runStep } from '../utils/known-actions.js';
 
@@ -14,12 +15,17 @@ function installCommand(pm: string | undefined): string {
   }
 }
 
-function testCommand(testRunner: string | undefined, pm: string | undefined): string {
+function testCommand(
+  testRunner: string | undefined,
+  pm: string | undefined,
+  coverageThreshold?: number,
+): string {
   const prefix = pm === 'poetry' ? 'poetry run ' : '';
+  const gate = coverageThreshold !== undefined ? ` --cov-fail-under=${coverageThreshold}` : '';
   switch (testRunner) {
-    case 'pytest': return `${prefix}pytest --cov --cov-report=xml -v`;
+    case 'pytest': return `${prefix}pytest --cov --cov-report=xml${gate} -v`;
     case 'tox':    return 'tox';
-    default:       return `${prefix}python -m pytest --cov --cov-report=xml`;
+    default:       return `${prefix}python -m pytest --cov --cov-report=xml${gate}`;
   }
 }
 
@@ -48,7 +54,7 @@ function pythonCache(pm: string | undefined): CacheConfig {
 export class PythonGenerator implements PipelineGenerator {
   readonly name = 'python';
 
-  generate(manifest: ProjectManifest): Pipeline {
+  generate(manifest: ProjectManifest, options: GeneratorOptions = {}): Pipeline {
     const project = manifest.projects.find((p) => p.language === 'python');
     if (!project) throw new Error('PythonGenerator: no Python project in manifest');
 
@@ -97,7 +103,7 @@ export class PythonGenerator implements PipelineGenerator {
               }),
             )
             .step('Install dependencies', runStep('Install dependencies', installCommand(pm)))
-            .step('Run tests', runStep('Run tests', testCommand(testRunner, pm))),
+            .step('Run tests', runStep('Run tests', testCommand(testRunner, pm, options.coverageThreshold))),
         ),
     );
 

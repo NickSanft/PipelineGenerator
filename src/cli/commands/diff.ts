@@ -1,14 +1,62 @@
 import { Command } from 'commander';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { analyzeRepo } from '../../analyzers/registry.js';
+import { generatePipeline } from '../../generators/registry.js';
+import { getRenderer, type SupportedPlatform } from '../../renderers/registry.js';
+import { unifiedDiff } from '../../utils/diff.js';
+import { printDiff } from '../../utils/display.js';
 import { logger } from '../../utils/logger.js';
+
+const SUPPORTED_PLATFORMS: SupportedPlatform[] = ['github-actions', 'gitlab-ci'];
 
 export const diffCommand = new Command('diff')
   .description('Compare an existing pipeline config to what would be generated')
   .argument('[path]', 'Path to the repository root', '.')
-  .option('--target <platform>', 'Target platform: github-actions | gitlab-ci')
-  .action((repoPath: string, options) => {
-    logger.info(`Diffing pipeline for: ${repoPath}`);
-    if (options.target) {
-      logger.info(`Target platform: ${options.target}`);
+  .requiredOption(
+    '--target <platform>',
+    `Target platform: ${SUPPORTED_PLATFORMS.join(' | ')}`,
+  )
+  .option('--output <path>', 'Path to the existing pipeline file (defaults to renderer output path)')
+  .option('--coverage-threshold <number>', 'Minimum test coverage percentage (0–100)')
+  .action(async (repoPath: string, opts) => {
+    const platform = opts.target as SupportedPlatform;
+
+    if (!SUPPORTED_PLATFORMS.includes(platform)) {
+      logger.error(`Unknown platform "${platform}". Supported: ${SUPPORTED_PLATFORMS.join(', ')}`);
+      process.exit(1);
     }
-    console.log('Diff not yet implemented');
+
+    try {
+      logger.info(`Analyzing repository at: ${repoPath}`);
+      const manifest = await analyzeRepo(repoPath);
+
+      const options = {
+        coverageThreshold: opts.coverageThreshold !== undefined
+          ? Number(opts.coverageThreshold)
+          : undefined,
+      };
+
+      const pipeline = generatePipeline(manifest, options);
+      const renderer = getRenderer(platform);
+      const generated = renderer.render(pipeline);
+
+      const existingPath = opts.output
+        ? resolve(opts.output)
+        : resolve(repoPath, renderer.outputPath(pipeline));
+
+      let existing: string;
+      try {
+        existing = await readFile(existingPath, 'utf-8');
+      } catch {
+        logger.warn(`No existing file at ${existingPath} — showing full generated output as new file`);
+        existing = '';
+      }
+
+      const diff = unifiedDiff(existing, generated, existingPath, 'generated');
+      printDiff(diff, existingPath);
+    } catch (err) {
+      logger.error(`Diff failed: ${String(err)}`);
+      process.exit(1);
+    }
   });

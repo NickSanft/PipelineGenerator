@@ -1,6 +1,7 @@
 import type { PipelineGenerator } from './base.js';
 import type { ProjectManifest } from '../types/manifest.js';
 import type { CacheConfig, Pipeline } from '../types/pipeline.js';
+import type { GeneratorOptions } from './options.js';
 import { PipelineBuilder } from '../builder/pipeline-builder.js';
 import { actionStep, runStep } from '../utils/known-actions.js';
 
@@ -17,7 +18,7 @@ const GO_MODULE_CACHE: CacheConfig = {
 export class GoGenerator implements PipelineGenerator {
   readonly name = 'go';
 
-  generate(manifest: ProjectManifest): Pipeline {
+  generate(manifest: ProjectManifest, options: GeneratorOptions = {}): Pipeline {
     const project = manifest.projects.find((p) => p.language === 'go');
     if (!project) throw new Error('GoGenerator: no Go project in manifest');
 
@@ -76,7 +77,11 @@ export class GoGenerator implements PipelineGenerator {
                 'go test -race -coverprofile=coverage.out -covermode=atomic ./...',
               ),
             )
-            .step('Check coverage', runStep('Check coverage', 'go tool cover -func=coverage.out')),
+            .step('Check coverage', runStep('Check coverage',
+              options.coverageThreshold !== undefined
+                ? `go tool cover -func=coverage.out | awk 'END{split($NF,a,"%"); if(a[1]+0 < ${options.coverageThreshold}) {print "Coverage below ${options.coverageThreshold}%"; exit 1}}'`
+                : 'go tool cover -func=coverage.out',
+            )),
         ),
     );
 

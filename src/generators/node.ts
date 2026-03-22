@@ -1,6 +1,7 @@
 import type { PipelineGenerator } from './base.js';
 import type { ProjectManifest, ProjectDescriptor } from '../types/manifest.js';
 import type { CacheConfig, Pipeline, Step } from '../types/pipeline.js';
+import type { GeneratorOptions } from './options.js';
 import { PipelineBuilder } from '../builder/pipeline-builder.js';
 import { actionStep, runStep } from '../utils/known-actions.js';
 
@@ -22,11 +23,21 @@ function auditCommand(pm: string | undefined): string {
   }
 }
 
-function testCommand(testRunner: string | undefined, pm: string | undefined): string {
+function testCommand(
+  testRunner: string | undefined,
+  pm: string | undefined,
+  coverageThreshold?: number,
+): string {
   const runner = pm === 'yarn' ? 'yarn' : pm === 'pnpm' ? 'pnpm' : 'npx';
   switch (testRunner) {
-    case 'vitest': return `${runner} vitest run --coverage`;
-    case 'jest':   return `${runner} jest --coverage --ci --forceExit`;
+    case 'vitest':
+      return coverageThreshold !== undefined
+        ? `${runner} vitest run --coverage --coverage.lines=${coverageThreshold}`
+        : `${runner} vitest run --coverage`;
+    case 'jest':
+      return coverageThreshold !== undefined
+        ? `${runner} jest --coverage --ci --forceExit --coverageThreshold='{"global":{"lines":${coverageThreshold}}}'`
+        : `${runner} jest --coverage --ci --forceExit`;
     case 'mocha':  return `${runner} mocha`;
     default:       return pm === 'yarn' ? 'yarn test' : pm === 'pnpm' ? 'pnpm test' : 'npm test';
   }
@@ -65,7 +76,7 @@ function hasScript(project: ProjectDescriptor, script: string): boolean {
 export class NodeGenerator implements PipelineGenerator {
   readonly name = 'node';
 
-  generate(manifest: ProjectManifest): Pipeline {
+  generate(manifest: ProjectManifest, options: GeneratorOptions = {}): Pipeline {
     const project = manifest.projects.find(
       (p) => p.language === 'typescript' || p.language === 'javascript',
     );
@@ -108,7 +119,7 @@ export class NodeGenerator implements PipelineGenerator {
 
         job
           .step('Security audit', runStep('Security audit', auditCommand(pm)))
-          .step('Run tests', runStep('Run tests', testCommand(testRunner, pm)));
+          .step('Run tests', runStep('Run tests', testCommand(testRunner, pm, options.coverageThreshold)));
 
         return job;
       }),
