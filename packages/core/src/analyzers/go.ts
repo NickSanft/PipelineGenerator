@@ -1,8 +1,9 @@
 import { join } from 'node:path';
 import type { Analyzer } from './base.js';
 import type { ProjectDescriptor, ArtifactType } from '../types/manifest.js';
-import { anyFileExists, fileExists, readTextFile } from '../utils/fs.js';
-import fg from 'fast-glob';
+import type { FileSystem } from '../utils/fs-adapter.js';
+
+
 
 interface GoMod {
   module: string;
@@ -55,19 +56,19 @@ function parseGoMod(content: string): GoMod {
 export class GoAnalyzer implements Analyzer {
   readonly name = 'go';
 
-  async detect(repoRoot: string): Promise<boolean> {
-    return fileExists(join(repoRoot, 'go.mod'));
+  async detect(repoRoot: string, fs: FileSystem): Promise<boolean> {
+    return fs.fileExists(join(repoRoot, 'go.mod'));
   }
 
-  async analyze(repoRoot: string): Promise<ProjectDescriptor> {
-    const content = await readTextFile(join(repoRoot, 'go.mod'));
+  async analyze(repoRoot: string, fs: FileSystem): Promise<ProjectDescriptor> {
+    const content = await fs.readTextFile(join(repoRoot, 'go.mod'));
     const goMod = content ? parseGoMod(content) : { module: 'unknown', goVersion: 'unknown', requires: [] };
 
     const moduleParts = goMod.module.split('/');
     const name = moduleParts[moduleParts.length - 1];
 
     const framework = this.detectFramework(goMod.requires);
-    const isBinary = await this.detectBinary(repoRoot);
+    const isBinary = await this.detectBinary(repoRoot, fs);
     const artifacts: ArtifactType[] = isBinary ? ['binary'] : [];
 
     return {
@@ -94,11 +95,11 @@ export class GoAnalyzer implements Analyzer {
     return undefined;
   }
 
-  private async detectBinary(repoRoot: string): Promise<boolean> {
+  private async detectBinary(repoRoot: string, fs: FileSystem): Promise<boolean> {
     // Has main.go at root or a cmd/ directory with main packages
-    if (await fileExists(join(repoRoot, 'main.go'))) return true;
-    if (await anyFileExists(repoRoot, ['cmd'])) {
-      const mainFiles = await fg('cmd/**/main.go', { cwd: repoRoot });
+    if (await fs.fileExists(join(repoRoot, 'main.go'))) return true;
+    if (await fs.anyFileExists(repoRoot, ['cmd'])) {
+      const mainFiles = await fs.glob('cmd/**/main.go', { cwd: repoRoot });
       return mainFiles.length > 0;
     }
     return false;

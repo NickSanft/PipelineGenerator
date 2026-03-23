@@ -1,29 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { GoAnalyzer } from '../../src/analyzers/go.js';
+import { LocalFileSystem } from '../../src/utils/fs-adapter.js';
 
 const FIXTURES = join(import.meta.dirname, '../fixtures');
+const fs = new LocalFileSystem();
 
 describe('GoAnalyzer', () => {
   const analyzer = new GoAnalyzer();
 
   describe('detect()', () => {
     it('detects a Go project', async () => {
-      expect(await analyzer.detect(join(FIXTURES, 'go-service'))).toBe(true);
+      expect(await analyzer.detect(join(FIXTURES, 'go-service'), fs)).toBe(true);
     });
 
     it('does not detect a Node project', async () => {
-      expect(await analyzer.detect(join(FIXTURES, 'node-basic'))).toBe(false);
+      expect(await analyzer.detect(join(FIXTURES, 'node-basic'), fs)).toBe(false);
     });
 
     it('does not detect a Python project', async () => {
-      expect(await analyzer.detect(join(FIXTURES, 'python-fastapi'))).toBe(false);
+      expect(await analyzer.detect(join(FIXTURES, 'python-fastapi'), fs)).toBe(false);
     });
   });
 
   describe('analyze()', () => {
     it('produces a correct descriptor for go-service', async () => {
-      const descriptor = await analyzer.analyze(join(FIXTURES, 'go-service'));
+      const descriptor = await analyzer.analyze(join(FIXTURES, 'go-service'), fs);
 
       expect(descriptor.name).toBe('go-service');
       expect(descriptor.language).toBe('go');

@@ -1,7 +1,6 @@
 import inquirer from 'inquirer';
-import type { GeneratorOptions } from '../generators/options.js';
-import type { ProjectManifest } from '../types/manifest.js';
-import type { SupportedPlatform } from '../renderers/registry.js';
+import type { GeneratorOptions, SupportedPlatform } from '@pipeline-gen/core';
+import type { ProjectManifest } from '@pipeline-gen/core';
 
 export interface InteractiveResult {
   platform: SupportedPlatform;

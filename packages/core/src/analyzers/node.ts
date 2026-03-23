@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import type { Analyzer } from './base.js';
 import type { ProjectDescriptor, Language, ArtifactType } from '../types/manifest.js';
-import { fileExists, readJsonFile } from '../utils/fs.js';
+import type { FileSystem } from '../utils/fs-adapter.js';
 
 interface PackageJson {
   name?: string;
@@ -51,20 +51,20 @@ const BUILD_TOOL_DEPS: Record<string, string> = {
 export class NodeAnalyzer implements Analyzer {
   readonly name = 'node';
 
-  async detect(repoRoot: string): Promise<boolean> {
-    return fileExists(join(repoRoot, 'package.json'));
+  async detect(repoRoot: string, fs: FileSystem): Promise<boolean> {
+    return fs.fileExists(join(repoRoot, 'package.json'));
   }
 
-  async analyze(repoRoot: string): Promise<ProjectDescriptor> {
-    const pkg = await readJsonFile<PackageJson>(join(repoRoot, 'package.json'));
+  async analyze(repoRoot: string, fs: FileSystem): Promise<ProjectDescriptor> {
+    const pkg = await fs.readJsonFile<PackageJson>(join(repoRoot, 'package.json'));
     const allDeps: Record<string, string> = {
       ...pkg?.dependencies,
       ...pkg?.devDependencies,
     };
 
-    const language = await this.detectLanguage(repoRoot, allDeps);
+    const language = await this.detectLanguage(repoRoot, allDeps, fs);
     const framework = this.detectFramework(allDeps);
-    const packageManager = await this.detectPackageManager(repoRoot);
+    const packageManager = await this.detectPackageManager(repoRoot, fs);
     const testRunner = this.detectTestRunner(pkg?.scripts ?? {}, allDeps);
     const buildTool = this.detectBuildTool(pkg?.scripts ?? {}, allDeps, language);
     const artifacts = this.detectArtifacts(pkg);
@@ -77,8 +77,8 @@ export class NodeAnalyzer implements Analyzer {
       packageManager,
       testRunner,
       buildTool,
-      hasDockerfile: false, // enriched by DockerAnalyzer
-      deploymentTargets: [], // enriched by DeploymentAnalyzer
+      hasDockerfile: false,
+      deploymentTargets: [],
       artifacts,
       raw: { scripts: pkg?.scripts ?? {} },
     };
@@ -87,9 +87,10 @@ export class NodeAnalyzer implements Analyzer {
   private async detectLanguage(
     repoRoot: string,
     deps: Record<string, string>,
+    fs: FileSystem,
   ): Promise<Language> {
     if ('typescript' in deps) return 'typescript';
-    if (await fileExists(join(repoRoot, 'tsconfig.json'))) return 'typescript';
+    if (await fs.fileExists(join(repoRoot, 'tsconfig.json'))) return 'typescript';
     return 'javascript';
   }
 
@@ -100,9 +101,9 @@ export class NodeAnalyzer implements Analyzer {
     return undefined;
   }
 
-  private async detectPackageManager(repoRoot: string): Promise<string> {
-    if (await fileExists(join(repoRoot, 'pnpm-lock.yaml'))) return 'pnpm';
-    if (await fileExists(join(repoRoot, 'yarn.lock'))) return 'yarn';
+  private async detectPackageManager(repoRoot: string, fs: FileSystem): Promise<string> {
+    if (await fs.fileExists(join(repoRoot, 'pnpm-lock.yaml'))) return 'pnpm';
+    if (await fs.fileExists(join(repoRoot, 'yarn.lock'))) return 'yarn';
     return 'npm';
   }
 
@@ -134,7 +135,6 @@ export class NodeAnalyzer implements Analyzer {
     for (const [dep, tool] of Object.entries(BUILD_TOOL_DEPS)) {
       if (dep in deps) return tool;
     }
-    // TypeScript projects default to tsc
     if (language === 'typescript') return 'tsc';
     return undefined;
   }

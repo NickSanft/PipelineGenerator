@@ -1,14 +1,18 @@
 import { Command } from 'commander';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { analyzeRepo } from '../../analyzers/registry.js';
-import { generatePipeline } from '../../generators/registry.js';
-import { makeDecisions } from '../../generators/decisions.js';
-import type { GeneratorOptions } from '../../generators/options.js';
-import { getRenderer, type SupportedPlatform } from '../../renderers/registry.js';
+import {
+  analyzeRepo,
+  generatePipeline,
+  makeDecisions,
+  getRenderer,
+  printManifestSummary,
+  printDecisions,
+  printOutputPath,
+  logger,
+} from '@pipeline-gen/core';
+import type { GeneratorOptions, SupportedPlatform } from '@pipeline-gen/core';
 import { runInteractivePrompts } from '../interactive.js';
-import { printManifestSummary, printDecisions, printOutputPath } from '../../utils/display.js';
-import { logger } from '../../utils/logger.js';
 
 const SUPPORTED_PLATFORMS: SupportedPlatform[] = ['github-actions', 'gitlab-ci'];
 

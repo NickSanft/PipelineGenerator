@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { anyFileExists, readTextFile } from '../utils/fs.js';
+import type { FileSystem } from '../utils/fs-adapter.js';
 import type { ArtifactType } from '../types/manifest.js';
 
 export interface DockerInfo {
@@ -13,15 +13,15 @@ export interface DockerInfo {
  * Detects Docker-related configuration in a project directory.
  * Used as an enrichment step by the analyzer registry — not a standalone Analyzer.
  */
-export async function detectDocker(projectRoot: string): Promise<DockerInfo> {
-  const hasDockerfile = await anyFileExists(projectRoot, ['Dockerfile', 'Dockerfile.prod', 'Dockerfile.production']);
-  const hasDockerCompose = await anyFileExists(projectRoot, ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml']);
+export async function detectDocker(projectRoot: string, fs: FileSystem): Promise<DockerInfo> {
+  const hasDockerfile = await fs.anyFileExists(projectRoot, ['Dockerfile', 'Dockerfile.prod', 'Dockerfile.production']);
+  const hasDockerCompose = await fs.anyFileExists(projectRoot, ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml']);
 
   if (!hasDockerfile) {
     return { hasDockerfile: false, hasDockerCompose, isMultiStage: false };
   }
 
-  const content = await readTextFile(join(projectRoot, 'Dockerfile'));
+  const content = await fs.readTextFile(join(projectRoot, 'Dockerfile'));
   if (!content) {
     return { hasDockerfile: true, hasDockerCompose, isMultiStage: false };
   }

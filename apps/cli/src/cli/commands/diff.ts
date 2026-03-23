@@ -1,12 +1,15 @@
 import { Command } from 'commander';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { analyzeRepo } from '../../analyzers/registry.js';
-import { generatePipeline } from '../../generators/registry.js';
-import { getRenderer, type SupportedPlatform } from '../../renderers/registry.js';
-import { unifiedDiff } from '../../utils/diff.js';
-import { printDiff } from '../../utils/display.js';
-import { logger } from '../../utils/logger.js';
+import {
+  analyzeRepo,
+  generatePipeline,
+  getRenderer,
+  unifiedDiff,
+  printDiff,
+  logger,
+} from '@pipeline-gen/core';
+import type { SupportedPlatform } from '@pipeline-gen/core';
 
 const SUPPORTED_PLATFORMS: SupportedPlatform[] = ['github-actions', 'gitlab-ci'];
 

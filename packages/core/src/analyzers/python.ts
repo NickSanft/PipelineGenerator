@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import type { Analyzer } from './base.js';
 import type { ProjectDescriptor, ArtifactType } from '../types/manifest.js';
-import { anyFileExists, fileExists, readTextFile } from '../utils/fs.js';
+import type { FileSystem } from '../utils/fs-adapter.js';
 
 // Minimal types for the parts of pyproject.toml we care about
 interface PyprojectToml {
@@ -45,33 +45,33 @@ function extractPackageName(dep: string): string {
 export class PythonAnalyzer implements Analyzer {
   readonly name = 'python';
 
-  async detect(repoRoot: string): Promise<boolean> {
-    return anyFileExists(repoRoot, ['pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt']);
+  async detect(repoRoot: string, fs: FileSystem): Promise<boolean> {
+    return fs.anyFileExists(repoRoot, ['pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt']);
   }
 
-  async analyze(repoRoot: string): Promise<ProjectDescriptor> {
+  async analyze(repoRoot: string, fs: FileSystem): Promise<ProjectDescriptor> {
     let name = 'unknown';
     let framework: string | undefined;
     let packageManager = 'pip';
     let testRunner: string | undefined;
     let buildTool: string | undefined;
 
-    if (await fileExists(join(repoRoot, 'pyproject.toml'))) {
-      const result = await this.analyzePyproject(repoRoot);
+    if (await fs.fileExists(join(repoRoot, 'pyproject.toml'))) {
+      const result = await this.analyzePyproject(repoRoot, fs);
       name = result.name ?? name;
       framework = result.framework;
       packageManager = result.packageManager;
       testRunner = result.testRunner;
       buildTool = result.buildTool;
-    } else if (await fileExists(join(repoRoot, 'setup.py'))) {
-      const result = await this.analyzeSetupPy(repoRoot);
+    } else if (await fs.fileExists(join(repoRoot, 'setup.py'))) {
+      const result = await this.analyzeSetupPy(repoRoot, fs);
       name = result.name ?? name;
       framework = result.framework;
     }
 
     // Detect test runner from config files if not found yet
     if (!testRunner) {
-      testRunner = await this.detectTestRunner(repoRoot);
+      testRunner = await this.detectTestRunner(repoRoot, fs);
     }
 
     const artifacts = this.detectArtifacts(buildTool, packageManager);
@@ -90,14 +90,14 @@ export class PythonAnalyzer implements Analyzer {
     };
   }
 
-  private async analyzePyproject(repoRoot: string): Promise<{
+  private async analyzePyproject(repoRoot: string, fs: FileSystem): Promise<{
     name?: string;
     framework?: string;
     packageManager: string;
     testRunner?: string;
     buildTool?: string;
   }> {
-    const content = await readTextFile(join(repoRoot, 'pyproject.toml'));
+    const content = await fs.readTextFile(join(repoRoot, 'pyproject.toml'));
     if (!content) return { packageManager: 'pip' };
 
     let toml: PyprojectToml;
@@ -146,11 +146,11 @@ export class PythonAnalyzer implements Analyzer {
     return { name, framework, packageManager, testRunner, buildTool };
   }
 
-  private async analyzeSetupPy(repoRoot: string): Promise<{
+  private async analyzeSetupPy(repoRoot: string, fs: FileSystem): Promise<{
     name?: string;
     framework?: string;
   }> {
-    const content = await readTextFile(join(repoRoot, 'setup.py'));
+    const content = await fs.readTextFile(join(repoRoot, 'setup.py'));
     if (!content) return {};
     const nameMatch = content.match(/name\s*=\s*['"]([^'"]+)['"]/);
     const installRequires = content.match(/install_requires\s*=\s*\[([^\]]+)\]/s);
@@ -169,9 +169,9 @@ export class PythonAnalyzer implements Analyzer {
     return undefined;
   }
 
-  private async detectTestRunner(repoRoot: string): Promise<string | undefined> {
-    if (await anyFileExists(repoRoot, ['pytest.ini', 'conftest.py', 'tox.ini'])) return 'pytest';
-    if (await fileExists(join(repoRoot, 'tox.ini'))) return 'tox';
+  private async detectTestRunner(repoRoot: string, fs: FileSystem): Promise<string | undefined> {
+    if (await fs.anyFileExists(repoRoot, ['pytest.ini', 'conftest.py', 'tox.ini'])) return 'pytest';
+    if (await fs.fileExists(join(repoRoot, 'tox.ini'))) return 'tox';
     return undefined;
   }
 

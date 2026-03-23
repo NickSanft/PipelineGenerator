@@ -1,6 +1,5 @@
 import { Command } from 'commander';
-import { analyzeRepo } from '../../analyzers/registry.js';
-import { logger } from '../../utils/logger.js';
+import { analyzeRepo, logger } from '@pipeline-gen/core';
 
 export const analyzeCommand = new Command('analyze')
   .description('Analyze a repository and print the project manifest as JSON')
