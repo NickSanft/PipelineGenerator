@@ -1,5 +1,5 @@
 import { join, relative, resolve } from 'node:path';
-import type { ProjectDescriptor, ProjectManifest } from '../types/manifest.js';
+import type { ProjectDescriptor, ProjectManifest, VCSInfo } from '../types/manifest.js';
 import type { Analyzer } from './base.js';
 import type { FileSystem } from '../utils/fs-adapter.js';
 import { LocalFileSystem } from '../utils/fs-adapter.js';
@@ -23,11 +23,21 @@ const LANGUAGE_ANALYZERS: Analyzer[] = [
 ];
 
 /**
- * Analyze a repository on the local filesystem.
- * Injects `LocalFileSystem` — swap for `GitHubFileSystem` (W-3) in the web API route.
+ * Analyze a repository.
+ *
+ * - `fs` defaults to `LocalFileSystem`; pass a `GitHubFileSystem` for web use.
+ * - `vcsInfo` is optional; if omitted the local git analyzeVCS() is used
+ *   (only meaningful for LocalFileSystem).
+ * - For non-local filesystems, `repoRoot` should be `'/'` (or the subdir path
+ *   as returned by `parseGitHubUrl`); `resolve()` is skipped so paths don't
+ *   get the process CWD prepended.
  */
-export async function analyzeRepo(repoRoot: string, fs: FileSystem = new LocalFileSystem()): Promise<ProjectManifest> {
-  const absoluteRoot = resolve(repoRoot);
+export async function analyzeRepo(
+  repoRoot: string,
+  fs: FileSystem = new LocalFileSystem(),
+  vcsInfo?: VCSInfo,
+): Promise<ProjectManifest> {
+  const absoluteRoot = fs instanceof LocalFileSystem ? resolve(repoRoot) : repoRoot;
 
   logger.debug(`Starting analysis of ${absoluteRoot}`);
 
@@ -42,7 +52,7 @@ export async function analyzeRepo(repoRoot: string, fs: FileSystem = new LocalFi
     }
   }
 
-  const vcs = await analyzeVCS(absoluteRoot);
+  const vcs = vcsInfo ?? (fs instanceof LocalFileSystem ? await analyzeVCS(absoluteRoot) : { defaultBranch: 'main', hasReleaseBranches: false });
 
   return {
     root: absoluteRoot,

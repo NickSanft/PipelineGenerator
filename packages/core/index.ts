@@ -21,9 +21,12 @@ export type {
   Notification,
 } from './src/types/pipeline.js';
 
-// ── FileSystem adapter ─────────────────────────────────────────────────────────
+// ── FileSystem adapters ────────────────────────────────────────────────────────
 export type { FileSystem } from './src/utils/fs-adapter.js';
 export { LocalFileSystem } from './src/utils/fs-adapter.js';
+export { GitHubFileSystem } from './src/utils/github-fs.js';
+export { parseGitHubUrl } from './src/utils/github-url.js';
+export type { GitHubRepoInfo } from './src/utils/github-url.js';
 
 // ── Analyzers ──────────────────────────────────────────────────────────────────
 export { analyzeRepo } from './src/analyzers/registry.js';
