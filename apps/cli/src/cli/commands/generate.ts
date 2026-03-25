@@ -11,8 +11,10 @@ import {
   printDecisions,
   printOutputPath,
   logger,
+  GitHubFileSystem,
+  parseGitHubUrl,
 } from '@pipeline-gen/core';
-import type { GeneratorOptions, SupportedPlatform } from '@pipeline-gen/core';
+import type { GeneratorOptions, SupportedPlatform, FileSystem } from '@pipeline-gen/core';
 import { runInteractivePrompts } from '../interactive.js';
 
 const SUPPORTED_PLATFORMS: SupportedPlatform[] = ['github-actions', 'gitlab-ci'];
@@ -43,8 +45,22 @@ export const generateCommand = new Command('generate')
     }
 
     try {
+      // ── Resolve filesystem ─────────────────────────────────────────────────
+      let fs: FileSystem | undefined;
+      let resolvedPath = repoPath;
+      let vcsInfo = undefined;
+
+      if (repoPath.startsWith('https://github.com/') || repoPath.startsWith('http://github.com/')) {
+        logger.info(`Fetching repository from GitHub: ${repoPath}`);
+        const info = parseGitHubUrl(repoPath);
+        const token = process.env.GITHUB_TOKEN;
+        fs = new GitHubFileSystem(info.owner, info.repo, info.ref, token, info.subdir);
+        vcsInfo = await GitHubFileSystem.fetchVCSInfo(info.owner, info.repo, token);
+        resolvedPath = info.subdir ? `/${info.subdir}` : '/';
+      }
+
       logger.info(`Analyzing repository at: ${repoPath}`);
-      const manifest = await analyzeRepo(repoPath);
+      const manifest = await analyzeRepo(resolvedPath, fs, vcsInfo);
 
       // ── Build options ──────────────────────────────────────────────────────
       let options: GeneratorOptions = {
@@ -62,7 +78,7 @@ export const generateCommand = new Command('generate')
       }
 
       // ── Load plugins ───────────────────────────────────────────────────────
-      const { plugins, rc } = await loadPlugins(repoPath);
+      const { plugins, rc } = await loadPlugins(resolvedPath, fs);
       if (plugins.length > 0) {
         logger.info(`Loaded plugins: ${plugins.map((p) => p.name).join(', ')}`);
       }
@@ -75,9 +91,12 @@ export const generateCommand = new Command('generate')
 
       const renderer = getRenderer(effectivePlatform);
       const yaml = renderer.render(pipeline);
+      const isRemote = fs !== undefined;
       const outputPath = opts.output
         ? resolve(opts.output)
-        : resolve(repoPath, renderer.outputPath(pipeline));
+        : isRemote
+          ? renderer.outputPath(pipeline)
+          : resolve(repoPath, renderer.outputPath(pipeline));
 
       // ── Dry run ────────────────────────────────────────────────────────────
       if (opts.dryRun) {
@@ -89,6 +108,11 @@ export const generateCommand = new Command('generate')
       }
 
       // ── Write file ─────────────────────────────────────────────────────────
+      if (isRemote) {
+        logger.info('Remote repository — use --dry-run to preview. Use a local clone to write files.');
+        console.log(yaml);
+        return;
+      }
       await mkdir(dirname(outputPath), { recursive: true });
       await writeFile(outputPath, yaml, 'utf-8');
       logger.success(`Generated: ${outputPath}`);

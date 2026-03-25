@@ -105,10 +105,14 @@ export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeRespon
     cacheSet(cacheKey, result);
     return NextResponse.json(result);
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'Analysis failed';
+    const isNoProjects = message.includes('no projects detected');
     console.error('[analyze]', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Analysis failed' },
-      { status: 500 },
+      { error: isNoProjects
+          ? 'No recognisable project was detected in this repository. pipeline-gen currently supports Node/TypeScript, Python, and Go projects.'
+          : message },
+      { status: isNoProjects ? 422 : 500 },
     );
   }
 }

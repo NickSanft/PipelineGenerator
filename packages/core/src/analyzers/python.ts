@@ -46,7 +46,12 @@ export class PythonAnalyzer implements Analyzer {
   readonly name = 'python';
 
   async detect(repoRoot: string, fs: FileSystem): Promise<boolean> {
-    return fs.anyFileExists(repoRoot, ['pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt']);
+    if (await fs.anyFileExists(repoRoot, ['pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt'])) {
+      return true;
+    }
+    // Fallback: any .py file in the root (tutorial / script repos)
+    const pyFiles = await fs.glob('*.py', { cwd: repoRoot });
+    return pyFiles.length > 0;
   }
 
   async analyze(repoRoot: string, fs: FileSystem): Promise<ProjectDescriptor> {
