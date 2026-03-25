@@ -6,6 +6,7 @@ import {
   generatePipeline,
   makeDecisions,
   getRenderer,
+  loadPlugins,
   printManifestSummary,
   printDecisions,
   printOutputPath,
@@ -60,11 +61,19 @@ export const generateCommand = new Command('generate')
         options = result.options;
       }
 
-      // ── Generate ───────────────────────────────────────────────────────────
-      logger.info(`Generating pipeline (target: ${platform})`);
-      const pipeline = generatePipeline(manifest, options);
+      // ── Load plugins ───────────────────────────────────────────────────────
+      const { plugins, rc } = await loadPlugins(repoPath);
+      if (plugins.length > 0) {
+        logger.info(`Loaded plugins: ${plugins.map((p) => p.name).join(', ')}`);
+      }
+      // rc.target overrides --target if not explicitly provided on CLI
+      const effectivePlatform = (opts.target !== undefined ? platform : rc?.target ?? platform) as SupportedPlatform;
 
-      const renderer = getRenderer(platform);
+      // ── Generate ───────────────────────────────────────────────────────────
+      logger.info(`Generating pipeline (target: ${effectivePlatform})`);
+      const pipeline = generatePipeline(manifest, options, plugins);
+
+      const renderer = getRenderer(effectivePlatform);
       const yaml = renderer.render(pipeline);
       const outputPath = opts.output
         ? resolve(opts.output)

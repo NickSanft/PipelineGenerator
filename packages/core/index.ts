@@ -41,6 +41,20 @@ export type { Decision } from './src/generators/decisions.js';
 export { getRenderer } from './src/renderers/registry.js';
 export type { SupportedPlatform } from './src/renderers/registry.js';
 
+// ── Plugins ────────────────────────────────────────────────────────────────────
+export type { Plugin, PluginHooks } from './src/plugins/base.js';
+export { runHook } from './src/plugins/base.js';
+export { createSonarQubePlugin } from './src/plugins/sonarqube.js';
+export type { SonarQubeConfig } from './src/plugins/sonarqube.js';
+export { createSlackNotifyPlugin } from './src/plugins/slack-notify.js';
+export type { SlackNotifyConfig } from './src/plugins/slack-notify.js';
+export { createDependencyAuditPlugin } from './src/plugins/dependency-audit.js';
+export type { DependencyAuditConfig } from './src/plugins/dependency-audit.js';
+export { createDockerBuildPlugin } from './src/plugins/docker-build.js';
+export type { DockerBuildConfig } from './src/plugins/docker-build.js';
+export { loadPlugins } from './src/plugins/loader.js';
+export type { PipelineGenRc } from './src/plugins/loader.js';
+
 // ── Utils ──────────────────────────────────────────────────────────────────────
 export { logger, setVerbose } from './src/utils/logger.js';
 export { printManifestSummary, printDecisions, printOutputPath, printDiff } from './src/utils/display.js';
