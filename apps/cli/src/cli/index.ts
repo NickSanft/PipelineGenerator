@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { analyzeCommand } from './commands/analyze.js';
 import { generateCommand } from './commands/generate.js';
 import { diffCommand } from './commands/diff.js';
+import { lintCommand } from './commands/lint.js';
 import { setVerbose } from '@pipeline-gen/core';
 
 const program = new Command();
@@ -22,5 +23,6 @@ program
 program.addCommand(analyzeCommand);
 program.addCommand(generateCommand);
 program.addCommand(diffCommand);
+program.addCommand(lintCommand);
 
 program.parse();

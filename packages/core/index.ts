@@ -41,6 +41,17 @@ export type { Decision } from './src/generators/decisions.js';
 export { getRenderer } from './src/renderers/registry.js';
 export type { SupportedPlatform } from './src/renderers/registry.js';
 
+// ── Linter ─────────────────────────────────────────────────────────────────────
+export type { LintRule, LintIssue, LintResult, LintSeverity, LintPlatform, LintLocation } from './src/linter/base.js';
+export { buildSummary } from './src/linter/base.js';
+export { lintYaml, detectPlatformFromPath } from './src/linter/runner.js';
+export { unpinnedActionsRule } from './src/linter/rules/unpinned-actions.js';
+export { missingTimeoutRule } from './src/linter/rules/missing-timeout.js';
+export { missingPermissionsRule } from './src/linter/rules/missing-permissions.js';
+export { missingCacheRule } from './src/linter/rules/missing-cache.js';
+export { unsafeInstallRule } from './src/linter/rules/unsafe-install.js';
+export { secretLeakRule } from './src/linter/rules/secret-leak.js';
+
 // ── Plugins ────────────────────────────────────────────────────────────────────
 export type { Plugin, PluginHooks } from './src/plugins/base.js';
 export { runHook } from './src/plugins/base.js';
