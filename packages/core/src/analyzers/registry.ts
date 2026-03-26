@@ -6,6 +6,7 @@ import { LocalFileSystem } from '../utils/fs-adapter.js';
 import { NodeAnalyzer } from './node.js';
 import { PythonAnalyzer } from './python.js';
 import { GoAnalyzer } from './go.js';
+import { JavaAnalyzer } from './java.js';
 import { detectDocker, dockerArtifacts } from './docker.js';
 import { detectDeploymentTargets } from './deployment.js';
 import { analyzeVCS } from './vcs.js';
@@ -20,6 +21,7 @@ const LANGUAGE_ANALYZERS: Analyzer[] = [
   new NodeAnalyzer(),
   new PythonAnalyzer(),
   new GoAnalyzer(),
+  new JavaAnalyzer(),
 ];
 
 /**

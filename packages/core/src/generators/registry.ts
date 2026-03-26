@@ -7,12 +7,14 @@ import { runHook } from '../plugins/base.js';
 import { NodeGenerator } from './node.js';
 import { PythonGenerator } from './python.js';
 import { GoGenerator } from './go.js';
+import { JavaGenerator } from './java.js';
 import { addDockerStage } from './docker.js';
 
 const GENERATORS: PipelineGenerator[] = [
   new NodeGenerator(),
   new PythonGenerator(),
   new GoGenerator(),
+  new JavaGenerator(),
 ];
 
 /**
@@ -71,6 +73,7 @@ function matchesLanguage(generatorName: string, language: string): boolean {
     case 'node':   return language === 'typescript' || language === 'javascript';
     case 'python': return language === 'python';
     case 'go':     return language === 'go';
+    case 'java':   return language === 'java' || language === 'kotlin';
     default:       return false;
   }
 }

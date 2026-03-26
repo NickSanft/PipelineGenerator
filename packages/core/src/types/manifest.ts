@@ -4,6 +4,7 @@ export type Language =
   | 'python'
   | 'go'
   | 'java'
+  | 'kotlin'
   | 'rust'
   | 'unknown';
 

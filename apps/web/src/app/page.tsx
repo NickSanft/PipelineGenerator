@@ -40,6 +40,8 @@ const EXAMPLES = [
   { label: 'Node.js', url: 'https://github.com/expressjs/express' },
   { label: 'Python', url: 'https://github.com/tiangolo/fastapi' },
   { label: 'Go', url: 'https://github.com/gin-gonic/gin' },
+  { label: 'Java', url: 'https://github.com/spring-projects/spring-petclinic' },
+  { label: 'Kotlin', url: 'https://github.com/NickSanft/ISO8583Tutorial' },
 ];
 
 // ── Page ─────────────────────────────────────────────────────────────────────

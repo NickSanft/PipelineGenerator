@@ -63,6 +63,11 @@ export const KNOWN_ACTIONS = {
     sha: 'cb7149a9b57195b609c63e8518d2c6ef8e5b7726',
     tag: 'v2.3.9',
   },
+  setupJava: {
+    action: 'actions/setup-java',
+    sha: '3a4f6e1af504cf6a31855fa899c6aa5355ba6c12',
+    tag: 'v4.7.0',
+  },
 } as const satisfies Record<string, PinnedAction>;
 
 /** Create a SHA-pinned action step. */

@@ -30,9 +30,11 @@ export type { GitHubRepoInfo } from './src/utils/github-url.js';
 
 // ── Analyzers ──────────────────────────────────────────────────────────────────
 export { analyzeRepo } from './src/analyzers/registry.js';
+export { JavaAnalyzer } from './src/analyzers/java.js';
 
 // ── Generators ─────────────────────────────────────────────────────────────────
 export { generatePipeline } from './src/generators/registry.js';
+export { JavaGenerator } from './src/generators/java.js';
 export { makeDecisions } from './src/generators/decisions.js';
 export type { GeneratorOptions } from './src/generators/options.js';
 export type { Decision } from './src/generators/decisions.js';
