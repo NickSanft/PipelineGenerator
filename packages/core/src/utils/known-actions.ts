@@ -68,6 +68,11 @@ export const KNOWN_ACTIONS = {
     sha: '3a4f6e1af504cf6a31855fa899c6aa5355ba6c12',
     tag: 'v4.7.0',
   },
+  setupDotnet: {
+    action: 'actions/setup-dotnet',
+    sha: '67a3573c9a586a3f9c594539f4ab511d57bb3ce9',
+    tag: 'v4.3.1',
+  },
 } as const satisfies Record<string, PinnedAction>;
 
 /** Create a SHA-pinned action step. */

@@ -31,10 +31,12 @@ export type { GitHubRepoInfo } from './src/utils/github-url.js';
 // ── Analyzers ──────────────────────────────────────────────────────────────────
 export { analyzeRepo } from './src/analyzers/registry.js';
 export { JavaAnalyzer } from './src/analyzers/java.js';
+export { CSharpAnalyzer } from './src/analyzers/csharp.js';
 
 // ── Generators ─────────────────────────────────────────────────────────────────
 export { generatePipeline } from './src/generators/registry.js';
 export { JavaGenerator } from './src/generators/java.js';
+export { CSharpGenerator } from './src/generators/csharp.js';
 export { makeDecisions } from './src/generators/decisions.js';
 export type { GeneratorOptions } from './src/generators/options.js';
 export type { Decision } from './src/generators/decisions.js';

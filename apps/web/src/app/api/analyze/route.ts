@@ -110,7 +110,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeRespon
     console.error('[analyze]', err);
     return NextResponse.json(
       { error: isNoProjects
-          ? 'No recognisable project was detected in this repository. pipeline-gen currently supports Node/TypeScript, Python, Go, Java, and Kotlin projects.'
+          ? 'No recognisable project was detected in this repository. pipeline-gen currently supports Node/TypeScript, Python, Go, Java, Kotlin, and C#/F# projects.'
           : message },
       { status: isNoProjects ? 422 : 500 },
     );

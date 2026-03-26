@@ -7,6 +7,7 @@ import { NodeAnalyzer } from './node.js';
 import { PythonAnalyzer } from './python.js';
 import { GoAnalyzer } from './go.js';
 import { JavaAnalyzer } from './java.js';
+import { CSharpAnalyzer } from './csharp.js';
 import { detectDocker, dockerArtifacts } from './docker.js';
 import { detectDeploymentTargets } from './deployment.js';
 import { analyzeVCS } from './vcs.js';
@@ -22,6 +23,7 @@ const LANGUAGE_ANALYZERS: Analyzer[] = [
   new PythonAnalyzer(),
   new GoAnalyzer(),
   new JavaAnalyzer(),
+  new CSharpAnalyzer(),
 ];
 
 /**

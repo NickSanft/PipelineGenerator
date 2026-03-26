@@ -5,6 +5,8 @@ export type Language =
   | 'go'
   | 'java'
   | 'kotlin'
+  | 'csharp'
+  | 'fsharp'
   | 'rust'
   | 'unknown';
 
